@@ -89,61 +89,6 @@ then
     msg_box "$SCRIPT_EXPLAINER"
 fi
 
-# Create a placeholder volume before modifying anything
-if [ -z "$PROVISIONING" ]
-then
-    if ! does_snapshot_exist "NcVM-installation" && yesno_box_no "Do you want to use LVM snapshots to be able to restore your root partition during upgrades and such?
-Please note: this feature will not be used by this script but by other scripts later on.
-For now we will only create a placeholder volume that will be used to let some space for snapshot volumes.
-Be aware that you will not be able to use the built-in backup solution if you choose 'No'!
-Enabling this will also force an automatic reboot after running the update script!"
-    then
-        check_free_space
-        if [ "$FREE_SPACE" -ge 50 ]
-        then
-            print_text_in_color "$ICyan" "Creating volume..."
-            sleep 1
-            # Create a placeholder snapshot
-            check_command lvcreate --size 5G --name "NcVM-installation" ubuntu-vg
-        else
-            print_text_in_color "$IRed" "Could not create volume because of insufficient space..."
-            sleep 2
-        fi
-    fi
-fi
-
-# Fix LVM on BASE image
-if grep -q "LVM" /etc/fstab
-then
-    if [ -n "$PROVISIONING" ] || yesno_box_yes "Do you want to make all free space available to your root partition?"
-    then
-    # Resize LVM (live installer is &%�%/!
-    # VM
-    print_text_in_color "$ICyan" "Extending LVM, this may take a long time..."
-    lvextend -l +100%FREE /dev/ubuntu-vg/ubuntu-lv
-
-    # Run it again manually just to be sure it's done
-    while :
-    do
-        lvdisplay | grep "Size" | awk '{print $3}'
-        if ! lvextend -L +10G /dev/ubuntu-vg/ubuntu-lv >/dev/null 2>&1
-        then
-            if ! lvextend -L +1G /dev/ubuntu-vg/ubuntu-lv >/dev/null 2>&1
-            then
-                if ! lvextend -L +100M /dev/ubuntu-vg/ubuntu-lv >/dev/null 2>&1
-                then
-                    if ! lvextend -L +1M /dev/ubuntu-vg/ubuntu-lv >/dev/null 2>&1
-                    then
-                        resize2fs /dev/ubuntu-vg/ubuntu-lv
-                        break
-                    fi
-                fi
-            fi
-        fi
-    done
-    fi
-fi
-
 # Install needed dependencies
 install_if_not lshw
 install_if_not net-tools
