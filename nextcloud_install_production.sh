@@ -193,50 +193,7 @@ install_if_not sudo
 install_if_not software-properties-common
 
 # Set dual or single drive setup
-if [ -n "$PROVISIONING" ]
-then
-    choice="2 Disks Auto"
-else
-    msg_box "This server is designed to run with two disks, one for OS and one for DATA. \
-This will get you the best performance since the second disk is using ZFS which is a superior filesystem.
 
-Though not recommended, you can still choose to only run on one disk, \
-if for example it's your only option on the hypervisor you're running.
-
-You will now get the option to decide which disk you want to use for DATA, \
-or run the automatic script that will choose the available disk automatically."
-
-    choice=$(whiptail --title "$TITLE - Choose disk format" --nocancel --menu \
-"How would you like to configure your disks?
-$MENU_GUIDE" "$WT_HEIGHT" "$WT_WIDTH" 4 \
-"2 Disks Auto" "(Automatically configured)" \
-"2 Disks Manual" "(Choose by yourself)" \
-"1 Disk" "(Only use one disk /mnt/ncdata - NO ZFS!)" 3>&1 1>&2 2>&3)
-fi
-
-case "$choice" in
-    "2 Disks Auto")
-        run_script DISK format-sdb
-        # Change to zfs-mount-generator
-        run_script DISK change-to-zfs-mount-generator
-        # Create daily zfs prune script
-        run_script DISK create-daily-zfs-prune
-
-    ;;
-    "2 Disks Manual")
-        run_script DISK format-chosen
-        # Change to zfs-mount-generator
-        run_script DISK change-to-zfs-mount-generator
-        # Create daily zfs prune script
-        run_script DISK create-daily-zfs-prune
-    ;;
-    "1 Disk")
-        print_text_in_color "$IRed" "1 Disk setup chosen."
-        sleep 2
-    ;;
-    *)
-    ;;
-esac
 
 # Set DNS resolver
 # https://unix.stackexchange.com/questions/442598/how-to-configure-systemd-resolved-and-systemd-networkd-to-use-local-dns-server-f
